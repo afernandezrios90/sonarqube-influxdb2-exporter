@@ -108,8 +108,8 @@ class Project:
 
 # Read selected metrics for file 'metrics.txt'
 # For testing on Windows
-with open(os.path.dirname(os.path.realpath(__file__))+'\metrics.txt') as file:
-#with open(os.path.dirname(os.path.realpath(__file__))+'/metrics.txt') as file:
+#with open(os.path.dirname(os.path.realpath(__file__))+'\metrics.txt') as file:
+with open(os.path.dirname(os.path.realpath(__file__))+'/metrics.txt') as file:
     selected_metrics = file.read().splitlines()
 selected_metrics_set = set(selected_metrics)
 
@@ -154,5 +154,5 @@ while True:
         points = project.generate_points()
         influx_write_api.write(INFLUX_BUCKET, INFLUX_ORG, points)
 
-
+    print('Waiting for next execution...')
     time.sleep(int(INTERVAL))
