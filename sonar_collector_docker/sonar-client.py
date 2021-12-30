@@ -104,12 +104,10 @@ while True:
     
     # Fetch all available metrics
     metrics = client.get_all_available_metrics('/api/metrics/search??ps=150')
-    comma_separated_metrics = ''
-    for metric in metrics:
-        comma_separated_metrics += metric + ','
-    # Fix for removing last comma
-    comma_separated_metrics = comma_separated_metrics[:-1]
+    comma_separated_metrics = ','.join(metrics)
     
+    print(comma_separated_metrics)
+
     # Collect metrics per project
     uri = '/api/measures/component'
     for item in projects:
