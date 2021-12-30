@@ -4,4 +4,8 @@ line_coverage
 vulnerabilities
 reliability_rating
 security_rating
+<<<<<<< HEAD
 sqale_rating
+=======
+sqale_rating
+>>>>>>> 12247f7cf293047cfc639fe909401dffaa57369c
