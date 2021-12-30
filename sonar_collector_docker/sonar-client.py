@@ -43,8 +43,9 @@ class SonarApiClient:
         for metric in data['metrics']:
             if metric['type'] in ['INT','MILLISEC','WORK_DUR','FLOAT','PERCENT','RATING']:
                 metrics.append(metric['key'])
-				
-        return metrics
+	    
+        metric_set = set(metrics)		
+        return metric_set
     
     def get_measures_by_component_id(self, endpoint):
         data = self._make_request(endpoint)
@@ -103,8 +104,16 @@ class Project:
             points.append(point)
         return points
 
+### MAIN ###
+
+# Read selected metrics for file 'metrics.txt'
+# For testing on Windows
+with open(os.path.dirname(os.path.realpath(__file__))+'\metrics.txt') as file:
+#with open(os.path.dirname(os.path.realpath(__file__))+'/metrics.txt') as file:
+    selected_metrics = file.read().splitlines()
+selected_metrics_set = set(selected_metrics)
+
 count=0
-print ("before while loop...")
 
 while True:
     count += 1
@@ -116,9 +125,15 @@ while True:
     sonar_client = SonarApiClient(USER, PASSWORD)
     projects = sonar_client.get_all_projects('/api/components/search?qualifiers=TRK&ps=250')
     
-    # Fetch all available metrics
-    metrics = sonar_client.get_all_available_metrics('/api/metrics/search?ps=150')
-    comma_separated_metrics = ','.join(metrics)
+    # Fetch all available metrics (as a set)
+    metric_set = sonar_client.get_all_available_metrics('/api/metrics/search?ps=150')
+    
+    # Check if all selected metrics are available in SonarQube metric list
+    if selected_metrics_set.issubset(metric_set):
+        comma_separated_metrics = ','.join(selected_metrics)
+    else:
+        print("Error: one or more metrics in the configuration file does not exist in SonarQube")
+        exit(1)
     # Declare influxdb connection
     influx_client = InfluxApiClient()
     influx_write_api = influx_client.connect()
@@ -137,9 +152,7 @@ while True:
         project.set_metrics(measures)
 
         points = project.generate_points()
-
         influx_write_api.write(INFLUX_BUCKET, INFLUX_ORG, points)
-        
-        #project.export_metrics()
+
 
     time.sleep(int(INTERVAL))

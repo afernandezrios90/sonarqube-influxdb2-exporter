@@ -1,0 +1,7 @@
+bugs
+code_smells
+line_coverage
+vulnerabilities
+reliability_rating
+security_rating
+sqale_debt_ratio
