@@ -128,8 +128,6 @@ while True:
     # Fetch all available metrics (as a set)
     metric_set = sonar_client.get_all_available_metrics('/api/metrics/search?ps=150')
     
-    print(metric_set)
-
     # Check if all selected metrics are available in SonarQube metric list
     if selected_metrics_set.issubset(metric_set):
         comma_separated_metrics = ','.join(selected_metrics)
