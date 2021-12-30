@@ -5,14 +5,14 @@ import time
 
 from influxdb import InfluxDBClient
 
-BASE_URL = os.getenv('SONAR_BASE_URL', 'http://sonar.yourGroup.com:9876')
-USER = os.environ['SONAR_USER']
-PASSWORD = os.getenv('SONAR_PASSWORD', '')
-INFLUX_URL = os.getenv('INFLUX_URL', '192.168.xx.xxx')
-INFLUX_USER = os.environ['INFLUX_USER']
-INFLUX_PASSWORD = os.environ['INFLUX_PASSWORD']
-INFLUX_DB = os.environ['INFLUX_DB']
-INTERVAL = os.environ['INTERVAL']
+BASE_URL = os.getenv('SONAR_URL', 'http://sonar.yourGroup.com:9876')
+USER = os.getenv('SONAR_USER', 'admin')
+PASSWORD = os.getenv('SONAR_PASSWORD', 'admin')
+INFLUX_URL = os.getenv('INFLUX_URL', '192.168.0.1')
+INFLUX_USER = os.getenv('INFLUX_USER', 'admin')
+INFLUX_PASSWORD = os.getenv('INFLUX_PASSWORD', 'admin')
+INFLUX_DB = os.getenv('INFLUX_DB', '')
+INTERVAL = os.getenv('INTERVAL', 86400)
 
 class SonarApiClient:
 
@@ -24,16 +24,17 @@ class SonarApiClient:
         r = requests.get(BASE_URL + endpoint, auth=(self.user, self.passwd))
         return r.json()
     
-    def get_all_ids(self, endpoint):
+    def get_all_projects(self, endpoint):
         data = self._make_request(endpoint)
-        ids = []
+        projects = []
         for component in data['components']:
             dict = {
                 'id': component['id'],
-                'key': component['key']
+                'key': component['key'],
+                'name': component['name']
             }
-            ids.append(dict)
-        return ids
+            projects.append(dict)
+        return projects
     
     def get_all_available_metrics(self, endpoint):
         data = self._make_request(endpoint)
@@ -95,23 +96,23 @@ while True:
     print ("count -----")
     print (count)
 
-#    nowtime = time.asctime( time.localtime(time.time()) )
-#    print ("本地时间为 :", nowtime)
     print ("begin export data...")
 
     # Fetch all projects IDs
     client = SonarApiClient(USER, PASSWORD)
-    ids = client.get_all_ids('/api/components/search?qualifiers=TRK&ps=250')
+    projects = client.get_all_projects('/api/components/search?qualifiers=TRK&ps=250')
     
     # Fetch all available metrics
-    metrics = client.get_all_available_metrics('/api/metrics/search?ps=150')
+    metrics = client.get_all_available_metrics('/api/metrics/search??ps=150')
     comma_separated_metrics = ''
     for metric in metrics:
         comma_separated_metrics += metric + ','
+    # Fix for removing last comma
+    comma_separated_metrics = comma_separated_metrics[:-1]
     
     # Collect metrics per project
     uri = '/api/measures/component'
-    for item in ids:
+    for item in projects:
         project_id = item['id']
         project_key = item['key']
         print(project_key, project_id)
