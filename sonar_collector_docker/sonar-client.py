@@ -3,15 +3,16 @@ import os
 import datetime
 import time 
 
-from influxdb import InfluxDBClient
+from influxdb_client import InfluxDBClient
+from influxdb_client.client.write_api import SYNCHRONOUS
 
 BASE_URL = os.getenv('SONAR_URL', 'http://sonar.yourGroup.com:9876')
 USER = os.getenv('SONAR_USER', 'admin')
 PASSWORD = os.getenv('SONAR_PASSWORD', 'admin')
 INFLUX_URL = os.getenv('INFLUX_URL', '192.168.0.1')
-INFLUX_USER = os.getenv('INFLUX_USER', 'admin')
-INFLUX_PASSWORD = os.getenv('INFLUX_PASSWORD', 'admin')
-INFLUX_DB = os.getenv('INFLUX_DB', '')
+INFLUX_TOKEN = os.getenv('INFLUX_TOKEN', '')
+INFLUX_ORG = os.getenv('INFLUX_ORG', '')
+INFLUX_BUCKET = os.getenv('INFLUX_BUCKET', '')
 INTERVAL = os.getenv('INTERVAL', 86400)
 
 class SonarApiClient:
@@ -49,12 +50,22 @@ class SonarApiClient:
         data = self._make_request(endpoint)
         return data['component']['measures']
 
+class InfluxApiClient:
+
+    def __init__(self):
+        pass
+
+    def connect(self):
+        client = InfluxDBClient(url=INFLUX_URL, token=INFLUX_TOKEN, org=INFLUX_ORG)
+        influx_write_api = client.write_api(write_options=SYNCHRONOUS)
+        return influx_write_api
 
 class Project:
 
-    def __init__(self, identifier, key):
+    def __init__(self, identifier, key, name):
         self.id = identifier
         self.key = key
+        self.name = name
         self.metrics = None
         self.timestamp = datetime.datetime.utcnow().isoformat()
 
@@ -62,31 +73,38 @@ class Project:
         self.metrics = metrics
 
     def export_metrics(self):
-        influx_client = InfluxDBClient(
-            host=INFLUX_URL,
-            port=8086,
-            username=INFLUX_USER,
-            password=INFLUX_PASSWORD,
-            database=INFLUX_DB
-        )
-        influx_client.write_points(self._prepare_metrics())
-
-    def _prepare_metrics(self):
-        json_to_export = []
+        influx_write_api.write(INFLUX_BUCKET, INFLUX_ORG, self.generate_points)
+    
+    def generate_points(self):
+        points = []
+        '''
+        'metrics' is an array of metrics with the following formats:
+        METRIC + VALUE --> {'metric': 'comment_lines', 'value': '15'},
+        METRIC + VALUE + BESTVALUE --> {'metric': 'blocker_violations', 'value': '0', 'bestValue': True},
+        METRIC + PERIODS[INDEX + VALUE + BESTVALUE --> {'metric': 'new_duplicated_lines', 'periods': [{'index': 1, 'value': '0', 'bestValue': True}]}
+        '''
         for metric in self.metrics:
-            one_metric = {
-                "measurement": metric['metric'],
-                "tags": {
-                    "id": self.id,
-                    "key": self.key
+            # Control of metrics content to access the value appropriately
+            if 'periods' in metric:
+                period_array = metric['periods']
+                value = period_array[0].get('value', 0)
+            else:
+                value = metric.get('value', '0')
+            # Generation of each metric point in influx format
+            point = {
+                'measurement': metric['metric'],
+                'tags': {
+                    'id': self.id,
+                    'key': self.key,
+                    'name': self.name
                 },
-                "time": self.timestamp,
-                "fields": {
-                    "value": float(metric['value'] if ('value' in metric) else 0)
-                }
+                'fields': {
+                    'value': float(value)
+                },
+                'time': self.timestamp
             }
-            json_to_export.append(one_metric)
-        return json_to_export
+            points.append(point)
+        return points
 
 count=0
 print ("before while loop...")
@@ -97,28 +115,35 @@ while True:
     print (count)
 
     print ("begin export data...")
-
     # Fetch all projects IDs
-    client = SonarApiClient(USER, PASSWORD)
-    projects = client.get_all_projects('/api/components/search?qualifiers=TRK&ps=250')
+    sonar_client = SonarApiClient(USER, PASSWORD)
+    projects = sonar_client.get_all_projects('/api/components/search?qualifiers=TRK&ps=250')
     
     # Fetch all available metrics
-    metrics = client.get_all_available_metrics('/api/metrics/search??ps=150')
+    metrics = sonar_client.get_all_available_metrics('/api/metrics/search??ps=150')
     comma_separated_metrics = ','.join(metrics)
     
-    print(comma_separated_metrics)
+    # Declare influxdb connection
+    influx_client = InfluxApiClient()
+    influx_write_api = influx_client.connect()
+
 
     # Collect metrics per project
     uri = '/api/measures/component'
     for item in projects:
         project_id = item['id']
         project_key = item['key']
-        print(project_key, project_id)
-        project = Project(identifier=project_id, key=project_key)
+        project_name = item['name']
+        project = Project(project_id, project_key, project_name)
         component_id_query_param = 'componentId=' + project_id
         metric_key_query_param = 'metricKeys=' + comma_separated_metrics
-        measures = client.get_measures_by_component_id(uri + '?' + component_id_query_param + '&' + metric_key_query_param)
+        measures = sonar_client.get_measures_by_component_id(uri + '?' + component_id_query_param + '&' + metric_key_query_param)
         project.set_metrics(measures)
-        project.export_metrics()
+
+        points = project.generate_points()
+
+        influx_write_api.write(INFLUX_BUCKET, INFLUX_ORG, points)
+        
+        #project.export_metrics()
 
     time.sleep(int(INTERVAL))
