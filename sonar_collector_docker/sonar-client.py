@@ -101,10 +101,10 @@ while True:
 
     # Fetch all projects IDs
     client = SonarApiClient(USER, PASSWORD)
-    ids = client.get_all_ids('/api/components/search?qualifiers=TRK')
+    ids = client.get_all_ids('/api/components/search?qualifiers=TRK&ps=250')
     
     # Fetch all available metrics
-    metrics = client.get_all_available_metrics('/api/metrics/search')
+    metrics = client.get_all_available_metrics('/api/metrics/search?ps=150')
     comma_separated_metrics = ''
     for metric in metrics:
         comma_separated_metrics += metric + ','
