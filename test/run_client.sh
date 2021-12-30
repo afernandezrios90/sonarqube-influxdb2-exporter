@@ -1,7 +1,18 @@
 #!/bin/bash
 
+# Fill with proper data
+
 echo "begin ...."
 
-SONAR_USER=admin SONAR_PASSWORD=admin INFLUX_USER=admin INFLUX_PASSWORD=admin INFLUX_DB=sonarqube_exporter python sonar-client.py
+SONAR_URL = ''
+SONAR_USER = ''
+SONAR_PASSWORD = ''
+INFLUX_URL = ''
+INFLUX_TOKEN = ''
+INFLUX_ORG = ''
+INFLUX_BUCKET = ''
+INTERVAL = 86400
 
-echo "end!!!"
+python sonar-client.py
+
+echo "End!"
