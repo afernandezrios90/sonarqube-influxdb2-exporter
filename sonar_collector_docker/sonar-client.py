@@ -71,9 +71,6 @@ class Project:
 
     def set_metrics(self, metrics):
         self.metrics = metrics
-
-    def export_metrics(self):
-        influx_write_api.write(INFLUX_BUCKET, INFLUX_ORG, self.generate_points)
     
     def generate_points(self):
         points = []
@@ -120,9 +117,8 @@ while True:
     projects = sonar_client.get_all_projects('/api/components/search?qualifiers=TRK&ps=250')
     
     # Fetch all available metrics
-    metrics = sonar_client.get_all_available_metrics('/api/metrics/search??ps=150')
+    metrics = sonar_client.get_all_available_metrics('/api/metrics/search?ps=150')
     comma_separated_metrics = ','.join(metrics)
-    
     # Declare influxdb connection
     influx_client = InfluxApiClient()
     influx_write_api = influx_client.connect()
