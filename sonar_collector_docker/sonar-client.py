@@ -32,7 +32,8 @@ class SonarApiClient:
             dict = {
                 'id': component['id'],
                 'key': component['key'],
-                'name': component['name']
+                'name': component['name'],
+                'tags': component['tags']
             }
             projects.append(dict)
         return projects
@@ -63,10 +64,11 @@ class InfluxApiClient:
 
 class Project:
 
-    def __init__(self, identifier, key, name):
+    def __init__(self, identifier, key, name, tags):
         self.id = identifier
         self.key = key
         self.name = name
+        self.tags = tags
         self.metrics = None
         self.timestamp = datetime.datetime.utcnow().isoformat()
 
@@ -94,7 +96,8 @@ class Project:
                 'tags': {
                     'id': self.id,
                     'key': self.key,
-                    'name': self.name
+                    'name': self.name,
+                    'tags': "|".join(self.tags)
                 },
                 'fields': {
                     'value': float(value)
@@ -123,7 +126,7 @@ while True:
     print ("begin export data...")
     # Fetch all projects IDs
     sonar_client = SonarApiClient(USER, PASSWORD)
-    projects = sonar_client.get_all_projects('/api/components/search?qualifiers=TRK&ps=250')
+    projects = sonar_client.get_all_projects('/api/components/search_projects?ps=250')
     
     # Fetch all available metrics (as a set)
     metric_set = sonar_client.get_all_available_metrics('/api/metrics/search?ps=150')
@@ -145,7 +148,8 @@ while True:
         project_id = item['id']
         project_key = item['key']
         project_name = item['name']
-        project = Project(project_id, project_key, project_name)
+        project_tags = item['tags']
+        project = Project(project_id, project_key, project_name, project_tags)
         component_id_query_param = 'componentId=' + project_id
         metric_key_query_param = 'metricKeys=' + comma_separated_metrics
         measures = sonar_client.get_measures_by_component_id(uri + '?' + component_id_query_param + '&' + metric_key_query_param)
