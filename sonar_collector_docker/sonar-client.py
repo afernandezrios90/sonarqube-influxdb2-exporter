@@ -141,6 +141,8 @@ while True:
     influx_client = InfluxApiClient()
     influx_write_api = influx_client.connect()
 
+    # Declare the set of tags
+    tags = set()
 
     # Collect metrics per project
     uri = '/api/measures/component'
@@ -149,14 +151,35 @@ while True:
         project_key = item['key']
         project_name = item['name']
         project_tags = item['tags']
+        # If project tags is empty, update the set
+        if len(project_tags):
+            tags.update(project_tags)
+
         project = Project(project_id, project_key, project_name, project_tags)
         component_id_query_param = 'componentId=' + project_id
         metric_key_query_param = 'metricKeys=' + comma_separated_metrics
         measures = sonar_client.get_measures_by_component_id(uri + '?' + component_id_query_param + '&' + metric_key_query_param)
         project.set_metrics(measures)
 
+        # Expose the metrics
         points = project.generate_points()
         influx_write_api.write(INFLUX_BUCKET, INFLUX_ORG, points)
+
+        # Expose the tags
+        tag_points = []
+        for tag in tags:
+            tag_point = {
+                'measurement': 'tag',
+                'tags': {
+                    'tag': tag
+                },
+                'fields': {
+                    'value': 1.0
+                },
+                'time': datetime.datetime.utcnow().isoformat()
+            }
+            tag_points.append(tag_point)
+        influx_write_api.write(INFLUX_BUCKET, INFLUX_ORG, tag_points)
 
     print('Waiting for next execution...')
     time.sleep(int(INTERVAL))
