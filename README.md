@@ -19,7 +19,7 @@ The exporter allows to gather the following metrics:
 
 Two sample dashboard definitions are provided as well:
 - Detailed dashboard
-  - User is able to select one project, pre-filtering by Tag
+  - User is able to select one project, pre-filtering by tag
   - For a given project, it displays the last value of 4 most common rates: Reliability rating, Security rating, Technical Debt rating & Cove coverage   
   - For a given project, it displays the historical value of 4 most common metrics: bugs, vulnerabilities, code coverage & code smells
 
@@ -28,7 +28,7 @@ Two sample dashboard definitions are provided as well:
   - For a given tag, it displays the historical value of 4 most common metrics for all the projects with that tag: bugs, vulnerabilities, code coverage & code smells
 
 Constraints:
-- Proper tagging system is encouraged. Project with no tag won't be displayed as the pre-filter is done by tags.
+- Proper tagging system is highly encouraged in SonarQube. Project with no tag won't be displayed as the pre-filter is done by tags.
 
 ### Build the exporter from the repo
 ```bash
