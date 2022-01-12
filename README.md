@@ -17,6 +17,19 @@ The exporter allows to gather the following metrics:
 - All active projects and their metrics and tags
 - The list of tags used to use tag filter in the dashboards
 
+Two sample dashboard definitions are provided as well:
+- Detailed dashboard
+  - User is able to select one project, pre-filtering by Tag
+  - For a given project, it displays the last value of 4 most common rates: Reliability rating, Security rating, Technical Debt rating & Cove coverage   
+  - For a given project, it displays the historical value of 4 most common metrics: bugs, vulnerabilities, code coverage & code smells
+
+- Executive dashboard
+  - User is able to select one tag
+  - For a given tag, it displays the historical value of 4 most common metrics for all the projects with that tag: bugs, vulnerabilities, code coverage & code smells
+
+Constraints:
+- Proper tagging system is encouraged. Project with no tag won't be displayed as the pre-filter is done by tags.
+
 ### Build the exporter from the repo
 ```bash
 docker build https://github.com/afernandezrios90/sonarqube-prometheus-exporter.git -t {yourDockerRepo}/sonarqube-influxdb2-exporter
