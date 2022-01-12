@@ -8,7 +8,7 @@ Also, control file has been added to be able to pre-select the desired metrics f
 
 ####  Data flow diagram
 
-![picture](https://github.com/qinrui777/sonarqube-metric-to-grafana/blob/master/images/Data-flow-diagram.png)
+![picture](https://github.com/qinrui777/sonarqube-metric-to-grafana/blob/master/images/Dataflow.png)
 
 ### Build the exporter from the repo
 ```bash
