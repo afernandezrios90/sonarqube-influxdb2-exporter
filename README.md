@@ -10,6 +10,13 @@ Also, control file has been added to be able to pre-select the desired metrics f
 
 ![picture](https://github.com/afernandezrios90/sonarqube-influxdb2-exporter/blob/master/images/Dataflow.png)
 
+### Main features
+
+The exporter allows to gather the following metrics:
+- All available metrics in SonarQube
+- All active projects and their metrics and tags
+- The list of tags used to use tag filter in the dashboards
+
 ### Build the exporter from the repo
 ```bash
 docker build https://github.com/afernandezrios90/sonarqube-prometheus-exporter.git -t {yourDockerRepo}/sonarqube-influxdb2-exporter
